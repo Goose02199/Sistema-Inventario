@@ -1,0 +1,77 @@
+services:
+  # 1. EL API GATEWAY (Enrutador Principal)
+  api-gateway:
+    build: ./api-gateway
+    container_name: dli_api_gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./api-gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - inventory-service
+      - billing-service
+    networks:
+      - dli_network
+
+  # 2. FRONTEND (Interfaz de Usuario React/Vite)
+  frontend:
+    build: 
+      context: ./frontend
+    container_name: dli_frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - dli_network
+
+  # 3. MICROSERVICIO A: INVENTARIO (Servidor Java Legacy)
+  inventory-service:
+    build:
+      context: ./inventory-service
+    container_name: dli_inventory_java
+    ports:
+      - "5001:5001"
+    networks:
+      - dli_network
+
+  # 4. MICROSERVICIO B: FACTURACIÓN 
+  billing-service:
+    build:
+      context: ./billing-service
+    container_name: dli_billing_python
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://admin:supersecreto@postgres-db:5432/dli_billing
+    networks:
+      - dli_network
+
+  # 5. BASE DE DATOS 
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: dli_postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: supersecreto
+      POSTGRES_DB: dli_billing
+    ports:
+      - "5432:5432" 
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d dli_billing"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dli_network
+
+# --- CONFIGURACIÓN DE INFRAESTRUCTURA ---
+networks:
+  dli_network:
+    driver: bridge
+
+volumes:
+  pg_data: 

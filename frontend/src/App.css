@@ -150,3 +150,21 @@ button:hover {
 .billing-table tr:hover {
   background-color: #f1f8ff;
 }
+
+/* Estilos para los inputs de cantidad */
+.input-group {
+  margin: 1rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.qty-input {
+  width: 60px;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 1rem;
+}

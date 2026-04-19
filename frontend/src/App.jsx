@@ -5,8 +5,18 @@ function App() {
   const [inventario, setInventario] = useState({ Laptop: 0, Mouse: 0 })
   const [lider, setLider] = useState(null)
   const [mensaje, setMensaje] = useState('')
-  // NUEVO: Estado para almacenar el historial de facturación de Python
   const [facturas, setFacturas] = useState([])
+  const [cantidades, setCantidades] = useState({ Laptop: 1, Mouse: 1 })
+
+  // Función para manejar el cambio en los inputs
+  const handleCantidadChange = (producto, valor) => {
+    // Evitamos números negativos o vacíos que rompan el backend
+    const num = parseInt(valor, 10);
+    setCantidades(prev => ({
+      ...prev,
+      [producto]: isNaN(num) || num < 1 ? 1 : num
+    }))
+  }
 
   // Función para consultar el inventario a Java
   const consultarInventario = async () => {
@@ -24,7 +34,7 @@ function App() {
     }
   }
 
-  // NUEVO: Función para consultar la facturación a Python
+  // Función para consultar la facturación a Python
   const consultarFacturacion = async () => {
     try {
       const response = await fetch('/api/facturacion')
@@ -39,7 +49,7 @@ function App() {
 
   // Función para enviar una transacción a Java
   const realizarTransaccion = async (tipo, producto, cantidad) => {
-    setMensaje('Procesando...')
+    setMensaje(`Procesando ${tipo} de ${cantidad} ${producto}(s)...`)
     const transaccion = {
       id: "TRX-" + Math.floor(Math.random() * 10000),
       producto: producto,
@@ -57,21 +67,17 @@ function App() {
 
       const data = await response.json()
       setMensaje(data.message || 'Transacción enviada')
-      
-      // Actualizamos ambos servicios para ver si hubo cambios
       refrescarTodo()
     } catch (error) {
       setMensaje('Error al procesar: ' + error.message)
     }
   }
 
-  // Agrupamos las actualizaciones
   const refrescarTodo = () => {
     consultarInventario()
     consultarFacturacion()
   }
 
-  // Al cargar la página, traemos datos de Java y de Python
   useEffect(() => {
     refrescarTodo()
   }, [])
@@ -88,15 +94,28 @@ function App() {
       {mensaje && <div className="alert">{mensaje}</div>}
 
       <div className="grid">
+        {/* TARJETA LAPTOPS */}
         <div className="card">
           <h2>Laptops</h2>
           <p className="stock">{inventario.Laptop} en stock</p>
+          
+          <div className="input-group">
+            <label>Cantidad:</label>
+            <input 
+              type="number" 
+              min="1" 
+              value={cantidades.Laptop} 
+              onChange={(e) => handleCantidadChange('Laptop', e.target.value)}
+              className="qty-input"
+            />
+          </div>
+
           <div className="actions">
-            <button onClick={() => realizarTransaccion('COMPRA', 'Laptop', 5)} className="btn-buy">
-              Comprar +5
+            <button onClick={() => realizarTransaccion('COMPRA', 'Laptop', cantidades.Laptop)} className="btn-buy">
+              Comprar
             </button>
-            <button onClick={() => realizarTransaccion('VENTA', 'Laptop', 1)} className="btn-sell">
-              Vender -1
+            <button onClick={() => realizarTransaccion('VENTA', 'Laptop', cantidades.Laptop)} className="btn-sell">
+              Vender
             </button>
           </div>
         </div>
@@ -104,12 +123,24 @@ function App() {
         <div className="card">
           <h2>Mouses</h2>
           <p className="stock">{inventario.Mouse} en stock</p>
+
+          <div className="input-group">
+            <label>Cantidad:</label>
+            <input 
+              type="number" 
+              min="1" 
+              value={cantidades.Mouse} 
+              onChange={(e) => handleCantidadChange('Mouse', e.target.value)}
+              className="qty-input"
+            />
+          </div>
+
           <div className="actions">
-            <button onClick={() => realizarTransaccion('COMPRA', 'Mouse', 10)} className="btn-buy">
-              Comprar +10
+            <button onClick={() => realizarTransaccion('COMPRA', 'Mouse', cantidades.Mouse)} className="btn-buy">
+              Comprar
             </button>
-            <button onClick={() => realizarTransaccion('VENTA', 'Mouse', 2)} className="btn-sell">
-              Vender -2
+            <button onClick={() => realizarTransaccion('VENTA', 'Mouse', cantidades.Mouse)} className="btn-sell">
+              Vender
             </button>
           </div>
         </div>
